@@ -14,12 +14,48 @@ class MessageSender
 
     def initialize(message_object, recipient)
         @message = message_object
+        @message.encrypt unless @message.is_encrypted?
         @recipient = recipient
+    end
+
+    # Look up user's public key
+
+    # Create the message hash
+
+    def create_envelope
+
+
+
     end
 
     def send
         puts "Finding user '#{@recipient}'"
         puts "Sending message: #{@message.message}"
+    end
+
+end
+
+class Envelope
+    attr_reader :recipient, :author, :body, :ready
+
+    def initialize(secure_message, author_user, recipient_user)
+        @message = secure_message
+        @recipient = recipient_user
+        @author = author_user
+        @ready = false
+    end
+
+    def seal
+        prepare_message_body
+        @recipient.public
+        @author.public
+    end
+
+    private
+
+    def prepare_message_body
+        @message.encrypt unless @message.is_encrypted?
+        @body = @message.message
     end
 
 end
@@ -34,25 +70,25 @@ class SecureMessage
     end
 
     def encrypt
-        if @status == :decrypted
+        if !self.is_encrypted?
             @message.map! {|c| c.ord}
             @message.map! {|a| a**@public_key % @product}
             @status = :encrypted
             @message
-        else
-            raise(AlreadyEncryptedError, "The message is already encrypted.")
         end
     end
 
     def decrypt
-        if @status == :encrypted
+        if self.is_encrypted?
             @message.map! {|a| a**@private_key % @product}
             @message.map! {|c| c.chr}
             @status = :decrypted
             @message.to_s
-        else
-            raise(AlreadyDecryptedError, "The message is already decrypted.")
         end
+    end
+
+    def is_encrypted?
+        @status == :encrypted
     end
 
     private
